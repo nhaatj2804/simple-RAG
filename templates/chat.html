@@ -15,7 +15,11 @@
 
       <div class="section chat-section">
         <div id="chatHistory"></div>
-
+        <div class="loading-dots" id="loadingDots" style="display: none">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
         <form id="queryForm" class="query-form">
           <textarea
             id="query"
@@ -86,6 +90,9 @@
           queryInput.value = "";
 
           try {
+            // Show loading animation
+            document.getElementById("loadingDots").style.display = "flex";
+
             const response = await fetch("/query", {
               method: "POST",
               headers: {
@@ -99,6 +106,9 @@
             });
 
             const data = await response.json();
+
+            // Hide loading animation
+            document.getElementById("loadingDots").style.display = "none";
 
             if (response.ok) {
               // Display assistant message
@@ -118,6 +128,40 @@
     </script>
 
     <style>
+      .loading-dots {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        padding: 20px;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        background: #3498db;
+        border-radius: 50%;
+        animation: bounce 0.5s ease-in-out infinite;
+      }
+
+      .dot:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+
+      .dot:nth-child(3) {
+        animation-delay: 0.2s;
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
       .header {
         margin-bottom: 30px;
       }

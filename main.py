@@ -38,13 +38,13 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 EMBEDDING_MODEL = HuggingFaceEmbeddings(model_name="intfloat/e5-small-v2")
 
 PROMPT_TEMPLATE = """
-Answer the question based only on the following context:
+You are a helpful assistant. Use only the information provided in the context below to answer the question. Do not include any information that is not in the context.
 
+Context:
 {context}
 
----
-
-Answer the question based on the above context: {question}
+Question:
+{question}
 """
 
 class ModelType(str, Enum):
