@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uploaded Files - RAG Interface</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Uploaded Files</h1>
+
+      <div class="section upload-section">
+        <h2>Upload New PDF</h2>
+        <form id="uploadForm">
+          <input type="file" accept=".pdf" id="pdfFile" required />
+          <button type="submit">Upload</button>
+        </form>
+        <div id="uploadStatus" class="hidden"></div>
+      </div>
+
+      <div class="section files-section">
+        <h2>Your Files</h2>
+        <div id="filesList"></div>
+      </div>
+    </div>
+
+    <script>
+      async function loadFiles() {
+        try {
+          const response = await fetch("/list-files");
+          const files = await response.json();
+          const filesList = document.getElementById("filesList");
+
+          if (files.length === 0) {
+            filesList.innerHTML = "<p>No files uploaded yet.</p>";
+            return;
+          }
+
+          const fileItems = files
+            .map(
+              (file) => `
+                    <div class="file-item">
+                        <a href="/chat/${encodeURIComponent(
+                          file
+                        )}" class="file-link">
+                            ${file}
+                        </a>
+                    </div>
+                `
+            )
+            .join("");
+
+          filesList.innerHTML = fileItems;
+        } catch (error) {
+          console.error("Error loading files:", error);
+        }
+      }
+
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const fileInput = document.getElementById("pdfFile");
+          const uploadStatus = document.getElementById("uploadStatus");
+
+          if (!fileInput.files[0]) {
+            uploadStatus.textContent = "Please select a PDF file";
+            uploadStatus.className = "error";
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("file", fileInput.files[0]);
+
+          try {
+            uploadStatus.textContent = "Uploading...";
+            uploadStatus.className = "success";
+            uploadStatus.style.display = "block";
+
+            const response = await fetch("/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              uploadStatus.textContent = `Success! Processed ${data.chunks_processed} chunks`;
+              uploadStatus.className = "success";
+              // Reload files list after successful upload
+              loadFiles();
+            } else {
+              uploadStatus.textContent = data.detail || "Upload failed";
+              uploadStatus.className = "error";
+            }
+          } catch (error) {
+            uploadStatus.textContent = "Error uploading file";
+            uploadStatus.className = "error";
+          }
+        });
+
+      // Load files when page loads
+      loadFiles();
+      async function deleteFile(fileName) {
+        if (!confirm(`Are you sure you want to delete ${fileName}?`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `/delete-file/${encodeURIComponent(fileName)}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          if (response.ok) {
+            // Reload the file list after successful deletion
+            loadFiles();
+          } else {
+            const data = await response.json();
+            alert(data.detail || "Error deleting file");
+          }
+        } catch (error) {
+          alert("Error deleting file");
+        }
+      }
+    </script>
+
+    <style>
+      .file-item-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .delete-btn {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .delete-btn:hover {
+        background-color: #c0392b;
+      }
+    </style>
+  </body>
+</html>

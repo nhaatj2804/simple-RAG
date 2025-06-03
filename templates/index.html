@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAG Interface</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>RAG Document Query System</h1>
+
+      <div class="section upload-section">
+        <h2>Upload PDF Document</h2>
+        <form id="uploadForm">
+          <input type="file" accept=".pdf" id="pdfFile" required />
+          <button type="submit">Upload</button>
+        </form>
+        <div id="uploadStatus" class="hidden"></div>
+      </div>
+
+      <div class="section query-section">
+        <h2>Query Document</h2>
+        <form id="queryForm">
+          <textarea
+            id="query"
+            rows="4"
+            placeholder="Enter your question here..."
+            required
+          ></textarea>
+          <select id="model" required>
+            <option value="deepseek">Deepseek</option>
+            <option value="gpt">GPT</option>
+          </select>
+          <button type="submit">Ask Question</button>
+        </form>
+        <div id="response" class="hidden"></div>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const fileInput = document.getElementById("pdfFile");
+          const uploadStatus = document.getElementById("uploadStatus");
+
+          if (!fileInput.files[0]) {
+            uploadStatus.textContent = "Please select a PDF file";
+            uploadStatus.className = "error";
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("file", fileInput.files[0]);
+
+          try {
+            uploadStatus.textContent = "Uploading...";
+            uploadStatus.className = "success";
+            uploadStatus.style.display = "block";
+
+            const response = await fetch("/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              uploadStatus.textContent = `Success! Processed ${data.chunks_processed} chunks`;
+              uploadStatus.className = "success";
+            } else {
+              uploadStatus.textContent = data.detail || "Upload failed";
+              uploadStatus.className = "error";
+            }
+          } catch (error) {
+            uploadStatus.textContent = "Error uploading file";
+            uploadStatus.className = "error";
+          }
+        });
+
+      document
+        .getElementById("queryForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const queryInput = document.getElementById("query");
+          const modelSelect = document.getElementById("model");
+          const responseDiv = document.getElementById("response");
+
+          const query = queryInput.value.trim();
+          const model = modelSelect.value;
+
+          if (!query) {
+            return;
+          }
+
+          try {
+            responseDiv.textContent = "Loading...";
+            responseDiv.className = "";
+            responseDiv.style.display = "block";
+
+            const response = await fetch("/query", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                query: query,
+                model: model,
+              }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              responseDiv.innerHTML = `
+                        <strong>Response:</strong><br>
+                        ${data.response}<br><br>
+                        <div class="sources">
+                            <strong>Sources:</strong><br>
+                            ${data.sources.filter((s) => s).join("<br>")}
+                        </div>
+                    `;
+            } else {
+              responseDiv.textContent = data.detail || "Query failed";
+              responseDiv.className = "error";
+            }
+          } catch (error) {
+            responseDiv.textContent = "Error processing query";
+            responseDiv.className = "error";
+          }
+        });
+    </script>
+  </body>
+</html>
