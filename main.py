@@ -186,7 +186,7 @@ async def query_database(request: QueryRequest):
             model = ChatLiteLLM(model="deepseek/deepseek-chat",api_key=os.getenv("DEEPSEEK_API_KEY"))
             response = model.invoke(prompt)
         else:  # GPT
-            model = ChatLiteLLM(model="gpt-3.5-turbo", api_key=os.getenv("OPENAI_API_KEY"))
+            model = ChatLiteLLM(model="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"))
             response = model.invoke(prompt)
         
         response_text = response.content if hasattr(response, 'content') else str(response)
@@ -204,4 +204,4 @@ async def query_database(request: QueryRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
